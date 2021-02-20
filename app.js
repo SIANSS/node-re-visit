@@ -1,20 +1,25 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const app = require('express')();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+const terminalLink = require('terminal-link');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const link = terminalLink('http://localhost:3000', 'http://localhost:3000');
 
-var app = express();
+app.get('/', (req, res)=> {
+  res.sendFile(__dirname + '/public/index.html');
+});
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  socket.on('chat message', (msg) => {
+    console.log('message: ' + msg);
+    io.emit('chat message', msg);
+  });
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+});
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
-module.exports = app;
+http.listen(3000, () => {
+  console.log(`listening on ${link}`);
+});
